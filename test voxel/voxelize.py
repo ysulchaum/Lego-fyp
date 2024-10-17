@@ -24,8 +24,14 @@ def write_json(new_data, filename='voxel_data.json'):
         json.dump(file_data, file, indent=2, separators=(', ', ': '))
 
 open_json()
-voxel_data = {"3024": voxelize_brick(20, 20, 8)}
-write_json(voxel_data)
+
+
+with open("bricksize.json", 'r') as brick_size:
+    brick_data = json.load(brick_size)
+
+for item in brick_data["brick_size"]:    
+    voxel_data = {item[0]: voxelize_brick(item[1], item[2], item[3])}
+    write_json(voxel_data)
 
 
 
