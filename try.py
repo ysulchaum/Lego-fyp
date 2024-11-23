@@ -13,6 +13,14 @@ def is_yellow(pixel):
     # Check if the pixel is within the yellow range
     return cv2.inRange(hsv_pixel, lower_yellow, upper_yellow) > 0
 
+def is_black(pixel):
+    # Define the range for black color in BGR
+    lower_black = np.array([0, 0, 0])
+    upper_black = np.array([50, 50, 50])
+    
+    # Check if the pixel is within the black range
+    return np.all(pixel >= lower_black) and np.all(pixel <= upper_black)
+
 def create_matrix_from_image(image_path, unit_size):
     # Load the image
     image = cv2.imread(image_path)
@@ -55,20 +63,6 @@ def resized_image(o_image, n_height, n_width):
 
 
 #######################################################################################
-'''
-
-def voxelize_brick(n, m, r, tensor):
-    voxel_list = []
-    for x in range(-n//2 + 2, n//2 + 1, 4):
-        for y in range(2, r + 1, 4):
-            for z in range(-m//2 + 2, m//2 + 1, 4):
-                x_idx = (x + 8) // 4
-                y_idx = (y - 2) // 4
-                z_idx = (z + 8) // 4
-                if tensor[x_idx, y_idx, z_idx]:
-                    voxel_list.append([x, y, z])
-    return voxel_list
-'''
 
 def voxelize_brick(tensor):
     voxel_list = []
@@ -77,7 +71,7 @@ def voxelize_brick(tensor):
         for h in range(T[1]):
             for w in range(T[2]):
                 if tensor[d, h, w]:
-                    voxel_list.append([-(T[2]-w)*4//2+2, 2+h*4, -(T[0]-d)*4//2+2])
+                    voxel_list.append([w*4-8, 2+h*4, d*4-8])
     return voxel_list
 
 
@@ -96,39 +90,27 @@ def write_json(new_data, filename='voxel_data.json'):
         # Convert back to JSON
         json.dump(file_data, file, indent=2, separators=(', ', ': '))
 
+
+def find_stud_positions(tensor, matrix):
+    positions = []
+    T = tensor.shape
+    #matrix_shape = matrix.shape
+    print([T[x] for x in range(3)])
+    for D in range(T[0]):
+        for H in range(T[1]):
+            for W in range(T[2]):
+                if tensor[D, H, W] == matrix[D, W] == 1:
+                    if H == 0 or tensor[D, H-1, W] != 1:
+                        positions.append([W*4-8, 2+H*4, D*4-8])
+
+    return positions
+
+
+
+
+
+
 ###################################################################################
-def one_image_to_tensor_to_voxel(code): # bug
-    # Parameters for the image and unit size
-    image_path = f'{code}.png'
-    unit_size = 4
-
-    with open("bricksize.json", 'r') as brick_size:
-        brick_data = json.load(brick_size)
-
-    # Find the sublist where the first element is "code"
-    brick = next(item for item in brick_data["brick_size"] if item[0] == code)
-    # Access the second element in that sublist
-    w = brick[1]
-    h = brick[3]
-    d = brick[2]
-
-    test = resized_image(image_path, h, w)
-
-    # Create the matrix from the image
-    matrix = create_matrix_from_image(test, unit_size)
-    tensor = np.tile(matrix, (int(d/4), 1, 1))
-
-    # Print the tensor
-    print(tensor)
-
-    open_json()
-
-    for item in brick_data["brick_size"]: 
-        if item[0] == code:
-            voxel_data = {item[0]: voxelize_brick(item[1], item[2], item[3], tensor)}
-            write_json(voxel_data)
-
-
 
 def images_to_tensor_to_voxel(brick_code = None): # to be continue 
     with open("bricksize.json", 'r') as brick_size:
@@ -165,5 +147,5 @@ def images_to_tensor_to_voxel(brick_code = None): # to be continue
 #######################################################
 
 
-images_to_tensor_to_voxel("3455")
+images_to_tensor_to_voxel('3024')
 
