@@ -13,14 +13,6 @@ def is_yellow(pixel):
     # Check if the pixel is within the yellow range
     return cv2.inRange(hsv_pixel, lower_yellow, upper_yellow) > 0
 
-def is_black(pixel):
-    # Define the range for black color in BGR
-    lower_black = np.array([0, 0, 0])
-    upper_black = np.array([50, 50, 50])
-    
-    # Check if the pixel is within the black range
-    return np.all(pixel >= lower_black) and np.all(pixel <= upper_black)
-
 def create_matrix_from_image(image_path, unit_size):
     # Load the image
     image = cv2.imread(image_path)
@@ -71,7 +63,8 @@ def voxelize_brick(tensor):
         for h in range(T[1]):
             for w in range(T[2]):
                 if tensor[d, h, w]:
-                    voxel_list.append([w*4-8, 2+h*4, d*4-8])
+                    voxel_list.append([-(T[2]-w)*4//2+2*(w+1), 2+h*4, -(T[0]-d)*4//2+2*(d+1)])
+                    #voxel_list.append([w*4-8, 2+h*4, d*4-8])
     return voxel_list
 
 
@@ -91,23 +84,17 @@ def write_json(new_data, filename='voxel_data.json'):
         json.dump(file_data, file, indent=2, separators=(', ', ': '))
 
 
-def find_stud_positions(tensor, matrix):
-    positions = []
-    T = tensor.shape
-    #matrix_shape = matrix.shape
-    print([T[x] for x in range(3)])
-    for D in range(T[0]):
-        for H in range(T[1]):
-            for W in range(T[2]):
-                if tensor[D, H, W] == matrix[D, W] == 1:
-                    if H == 0 or tensor[D, H-1, W] != 1:
-                        positions.append([W*4-8, 2+H*4, D*4-8])
+def resized_image(o_image, n_height, n_width):
+    # Load the image
+    image = cv2.imread(o_image)
 
-    return positions
+    # Resize the image
+    resized_image = cv2.resize(image, (n_width, n_height))
 
+    # Save the resized image
+    cv2.imwrite(f'resized_{o_image}', resized_image)
 
-
-
+    return f'resized_{o_image}'
 
 
 ###################################################################################
